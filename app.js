@@ -18,17 +18,17 @@ app.post('/weather', async (req, res) => {
             return res.status(400).json({ error: "town或apiUrl缺失" });
         }
 
-        const response = await fetch(
-            `${apiUrl}?Authorization=${API_KEY}&locationName=${town}&elementName=WeatherDescription`,
-            {
-                headers: {
-                    accept: "application/json",
-                },
+        const response = await fetch(`${apiUrl}?locationName=${town}&elementName=WeatherDescription`, {
+            headers: {
+                accept: "application/json",
+                Authorization: `Bearer ${API_KEY}`
             }
-        );
+        });
 
         if (!response.ok) {
-            return res.status(response.status).json({ error: "无法获取天气数据" });
+            const errorMessage = await response.text();
+            console.error("Fetch error:", errorMessage);
+            return res.status(response.status).json({ error: errorMessage });
         }
 
         const data = await response.json();
@@ -82,7 +82,7 @@ app.post('/add', async (req, res) => {
 
         // 3. 查找是否已存在 county
         let countyRecord = await prisma.county.findUnique({
-            where: { county }
+            where: { county },
         });
 
         // 4. 如果 county 不存在，创建并关联用户
