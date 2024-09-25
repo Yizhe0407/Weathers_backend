@@ -1,9 +1,16 @@
 import express from 'express';
-const app = express();
-app.use(express.json());
 
-app.get("/", (req, res) => res.send("Express on Vercel"));
+const app = express()
+const PORT = 8000
 
-app.listen(3000, () => console.log("Server ready on port 3000."));
+app.get('/', (req, res) => {
+  res.send('Hello World')
+})
 
-module.exports = app;
+app.get('/about', (req, res) => {
+  res.send('About route 🎉 ')
+})
+
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+})
