@@ -18,23 +18,21 @@ app.post('/weather', async (req, res) => {
             return res.status(400).json({ error: "town或apiUrl缺失" });
         }
 
-        const response = await fetch(`${apiUrl}?locationName=${town}&elementName=WeatherDescription`, {
+        // 使用 URL 參數傳遞授權碼
+        const response = await fetch(`${apiUrl}?Authorization=${API_KEY}&locationName=${town}&elementName=WeatherDescription`, {
             headers: {
                 accept: "application/json",
-                Authorization: `Bearer ${API_KEY}`
-            }
+            },
         });
 
         if (!response.ok) {
             const errorMessage = await response.text();
-            console.error("Fetch error:", errorMessage);
-            return res.status(response.status).json({ error: errorMessage, API_KEY });
+            return res.status(response.status).json({ error: errorMessage });
         }
 
         const data = await response.json();
 
-        const weatherElement =
-            data?.records?.locations?.[0]?.location?.[0]?.weatherElement?.[0];
+        const weatherElement = data?.records?.locations?.[0]?.location?.[0]?.weatherElement?.[0];
 
         if (!weatherElement) {
             return res.status(404).json({ error: "未找到天气信息" });
@@ -53,6 +51,7 @@ app.post('/weather', async (req, res) => {
         res.status(500).json({ error: "服务器内部错误" });
     }
 });
+
 
 app.post('/add', async (req, res) => {
     try {
