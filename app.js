@@ -10,7 +10,7 @@ const API_KEY = process.env.WEATHER_API_KEY;
 app.use(cors());
 app.use(express.json());
 
-app.post('/weather', async (req, res) => {
+app.post('/api/weather', async (req, res) => {
     try {
         const { town, apiUrl } = req.body;
 
@@ -53,7 +53,7 @@ app.post('/weather', async (req, res) => {
 });
 
 
-app.post('/add', async (req, res) => {
+app.post('/api/add', async (req, res) => {
     try {
         const { username, email, county, town } = req.body;
 
@@ -132,7 +132,7 @@ app.post('/add', async (req, res) => {
     }
 });
 
-app.get('/data', async (req, res) => {
+app.get('/api/data', async (req, res) => {
     try {
         const email = req.query.email;
 
