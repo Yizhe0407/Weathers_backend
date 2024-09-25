@@ -28,7 +28,7 @@ app.post('/weather', async (req, res) => {
         if (!response.ok) {
             const errorMessage = await response.text();
             console.error("Fetch error:", errorMessage);
-            return res.status(response.status).json({ error: errorMessage });
+            return res.status(response.status).json({ error: errorMessage, API_KEY });
         }
 
         const data = await response.json();
