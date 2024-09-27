@@ -50,20 +50,21 @@ export const weather = async (req, res) => {
 
 export const createUser = async (req, res) => {
     try {
-        const email = req.body;
+        const { email, username } = req.body;  // 从 req.body 中解构出 email 和 username
 
-        if (!email) {
-            return res.status(400).json({ error: "All fields are required" });
+        if (!email || !username) {  // 检查 email 和 username 是否都存在
+            return res.status(400).json({ error: "Email and username are required" });
         }
 
+        // 查找用户是否存在
         let user = await prisma.user.findUnique({
-            where: { email },
+            where: { email },  // email 应该是字符串
         });
-    
+
         // 如果用户不存在则创建
         if (!user) {
             user = await prisma.user.create({
-                data: { username, email }
+                data: { username, email }  // 创建时需要提供 username 和 email
             });
         }
 
@@ -73,6 +74,7 @@ export const createUser = async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 };
+
 
 export const add = async (req, res) => {
     try {
