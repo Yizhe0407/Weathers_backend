@@ -30,6 +30,8 @@ export const data = async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
+        console.log(data);
+
         // Return user's counties and associated towns
         res.status(200).json(data.counties.map((userCounty) => ({
             county: userCounty.county.county,

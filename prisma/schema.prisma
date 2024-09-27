@@ -16,7 +16,7 @@ datasource db {
 
 model User {
   id       Int        @id @default(autoincrement())
-  username String     @unique
+  username String
   email    String     @unique
 
   counties UserCounty[] // 多對多關聯
@@ -32,11 +32,11 @@ model County {
 
 model Town {
   id       Int     @id @default(autoincrement())
-  town     String  // 移除唯一性，將使用複合唯一性約束
-  countyId Int     // 必填，表示每個 Town 一定要有一個 County
+  town     String 
+  countyId Int    
   county   County  @relation(fields: [countyId], references: [id])
 
-  @@unique([town, countyId]) // 複合唯一性約束：同一個 County 不允許有相同的 Town 名稱
+  @@unique([town, countyId]) 
 }
 
 model UserCounty {
@@ -45,5 +45,5 @@ model UserCounty {
   user     User   @relation(fields: [userId], references: [id])
   county   County @relation(fields: [countyId], references: [id])
 
-  @@id([userId, countyId]) // 設置複合主鍵
+  @@id([userId, countyId]) 
 }
