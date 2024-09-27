@@ -100,38 +100,54 @@ export const add = async (req, res) => {
             countyRecord = await prisma.county.create({
                 data: {
                     county,
-                    user: { connect: { id: user.id } }, // 关联用户
                 },
             });
         }
 
-        // 3. 查找或创建镇（town）
+        await prisma.userCounty.upsert({
+            where: { userId_countyId: { userId: user.id, countyId: countyRecord.id } },
+            update: {},
+            create: {
+                userId: user.id,
+                countyId: countyRecord.id,
+            }
+        });
+
+        // 4. Find or create town with composite unique constraint (town, countyId)
         let townRecord = await prisma.town.findUnique({
-            where: { town },
+            where: {
+                town_countyId: {
+                    town,
+                    countyId: countyRecord.id,
+                },
+            },
         });
 
         if (!townRecord) {
             townRecord = await prisma.town.create({
                 data: {
                     town,
-                    county: { connect: { id: countyRecord.id } }, // 关联县
+                    county: { connect: { id: countyRecord.id } },
                 },
             });
         }
 
-        // 4. 查询用户及其关联的县和镇
+        // 5. Return user along with counties and towns
         const userWithCountiesAndTowns = await prisma.user.findUnique({
-            where: { email },
+            where: { id: user.id },
             include: {
-                countys: {
+                counties: {
                     include: {
-                        towns: true,
+                        county: {
+                            include: {
+                                towns: true,
+                            },
+                        },
                     },
                 },
             },
         });
 
-        // 5. 返回结果
         res.status(200).json({ user, county: countyRecord, town: townRecord, details: userWithCountiesAndTowns });
     } catch (error) {
         console.error("Error in add:", error);

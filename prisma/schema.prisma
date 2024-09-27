@@ -15,27 +15,35 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  username String @unique
-  email    String @unique
+  id       Int        @id @default(autoincrement())
+  username String     @unique
+  email    String     @unique
 
-  countys County[]
+  counties UserCounty[] // 多對多關聯
 }
 
 model County {
-  id     Int    @id @default(autoincrement())
-  county String @unique
+  id     Int          @id @default(autoincrement())
+  county String       @unique
 
-  userId Int?
-  user User? @relation(fields: [userId], references: [id])
-
-  towns Town[]
+  users  UserCounty[] // 多對多關聯
+  towns  Town[]
 }
 
 model Town {
-  id   Int    @id @default(autoincrement())
-  town String @unique
+  id       Int     @id @default(autoincrement())
+  town     String  // 移除唯一性，將使用複合唯一性約束
+  countyId Int     // 必填，表示每個 Town 一定要有一個 County
+  county   County  @relation(fields: [countyId], references: [id])
 
-  countyId Int?
-  county   County? @relation(fields: [countyId], references: [id])
+  @@unique([town, countyId]) // 複合唯一性約束：同一個 County 不允許有相同的 Town 名稱
+}
+
+model UserCounty {
+  userId   Int
+  countyId Int
+  user     User   @relation(fields: [userId], references: [id])
+  county   County @relation(fields: [countyId], references: [id])
+
+  @@id([userId, countyId]) // 設置複合主鍵
 }
