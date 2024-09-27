@@ -50,9 +50,9 @@ export const weather = async (req, res) => {
 
 export const createUser = async (req, res) => {
     try {
-        const { username, email } = req.body;
+        const email = req.body;
 
-        if (!username || !email) {
+        if (!email) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
