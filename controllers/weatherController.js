@@ -48,64 +48,89 @@ export const weather = async (req, res) => {
     }
 };
 
+export const createUser = async (req, res) => {
+    try {
+        const { username, email } = req.body;
+
+        if (!username || !email) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        let user = await prisma.user.findUnique({
+            where: { email },
+        });
+    
+        // 如果用户不存在则创建
+        if (!user) {
+            user = await prisma.user.create({
+                data: { username, email }
+            });
+        }
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error("Error in createUser:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
 export const add = async (req, res) => {
     try {
         const { username, email, county, town } = req.body;
 
-        // 输入验证
         if (!username || !email || !county || !town) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
         console.log("Received data:", { username, email, county, town });
 
-        // 1. 使用 upsert 查找或创建用户
-        const user = await prisma.user.upsert({
+        // 1. 查找用户
+        const user = await prisma.user.findUnique({
             where: { email },
-            update: {},  // 不需要更新，只查找或创建
-            create: { username, email },
+        });
+
+        // 2. 查找或创建县（county）
+        let countyRecord = await prisma.county.findUnique({
+            where: { county },
+        });
+
+        if (!countyRecord) {
+            countyRecord = await prisma.county.create({
+                data: {
+                    county,
+                    user: { connect: { id: user.id } }, // 关联用户
+                },
+            });
+        }
+
+        // 3. 查找或创建镇（town）
+        let townRecord = await prisma.town.findUnique({
+            where: { town },
+        });
+
+        if (!townRecord) {
+            townRecord = await prisma.town.create({
+                data: {
+                    town,
+                    county: { connect: { id: countyRecord.id } }, // 关联县
+                },
+            });
+        }
+
+        // 4. 查询用户及其关联的县和镇
+        const userWithCountiesAndTowns = await prisma.user.findUnique({
+            where: { email },
             include: {
                 countys: {
                     include: {
-                        towns: true
-                    }
-                }
-            }
-        });
-
-        // 2. 使用 upsert 查找或创建县（county），并与用户关联
-        const countyRecord = await prisma.county.upsert({
-            where: { county },
-            update: {},  // 不需要更新
-            create: {
-                county,
-                user: { connect: { id: user.id } }
+                        towns: true,
+                    },
+                },
             },
-            include: { towns: true }
         });
 
-        // 3. 使用 upsert 查找或创建镇（town），并与县（county）关联
-        const townRecord = await prisma.town.upsert({
-            where: { town },
-            update: {},  // 不需要更新
-            create: {
-                town,
-                county: { connect: { id: countyRecord.id } }
-            }
-        });
-
-        // 4. 查询该用户及其关联的县和镇信息
-        const userWithDetails = await prisma.user.findUnique({
-            where: { email },
-            include: {
-                countys: {
-                    include: { towns: true }
-                }
-            }
-        });
-
-        // 返回结果
-        res.status(200).json({ user: userWithDetails, county: countyRecord, town: townRecord });
+        // 5. 返回结果
+        res.status(200).json({ user, county: countyRecord, town: townRecord, details: userWithCountiesAndTowns });
     } catch (error) {
         console.error("Error in add:", error);
         res.status(500).json({ error: "Server error" });
