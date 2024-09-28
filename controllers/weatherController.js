@@ -96,7 +96,7 @@ export const add = async (req, res) => {
         }
 
         // 2. 查找或创建县（county）
-        let countyRecord = await prisma.county.findUnique({
+        let countyRecord = await prisma.county.findFirst({
             where: { county },
         });
 
