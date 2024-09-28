@@ -22,12 +22,16 @@ export const data = async (req, res) => {
             }
         });
 
+        console.log("Data:", data);
+
         // 格式化返回的结果
         const formattedResult = {
             towns: data.towns.map(userTown => ({
                 town: userTown.town.town
             }))
         };
+
+        console.log("Formatted result:", formattedResult);
 
         // 返回格式化的结果
         res.status(200).json(formattedResult);
