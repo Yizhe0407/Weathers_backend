@@ -12,7 +12,7 @@ export const data = async (req, res) => {
 
         // Find user and their associated counties and towns
         const data = await prisma.user.findUnique({
-            where: { id: userId, },
+            where: { id: user.id, },
             include: {
                 counties: {
                     include: {
