@@ -12,30 +12,26 @@ export const data = async (req, res) => {
 
         const user = await prisma.user.findUnique({
             where: { email },
-            select: { id: true },
+            select: { username: true },
         });
 
-        const userId = user.id;
-
-        console.log("userId:", userId);
+        console.log("User:", user);
 
         // Find user and their associated counties and towns
         const data = await prisma.userCounty.findMany({
             where: {
-                userId: userId,
+                username: user,
             },
             include: {
-                county: {
+                counties: {
                     include: {
-                        towns: { // 查找與 County 關聯的 Town
-                            include: {
-                                town: true, // 取出 Town 名稱
-                            },
-                        },
-                    },
-                },
-            },
+                        towns: true,  // 同時查詢每個 county 關聯的 towns
+                    }
+                }
+            }
         });
+
+        console.log("Data:", data);
 
         if (!data) {
             return res.status(404).json({ error: "User not found" });

@@ -118,23 +118,19 @@ export const add = async (req, res) => {
 
         if (!existingUserCounty) {
             // 如果沒有關聯，則創建新的關聯
-            await prisma.userCounty.upsert({
-                where: { userId_countyId: { userId: user.id, countyId: countyRecord.id } },
-                update: {},
-                create: {
+            await prisma.userCounty.create({
+                data: {
                     userId: user.id,
                     countyId: countyRecord.id,
-                }
+                },
             });
         }
 
-        // 4. 查找或创建 town 使用复合键 (town 和 countyId)
+        // 4. 查找或创建 town
         let townRecord = await prisma.town.findFirst({
             where: {
                 town: town,
-                counties: {
-                    some: { countyId: countyRecord.id },
-                },
+                countyId: countyRecord.id,
             },
         });
 
@@ -142,26 +138,12 @@ export const add = async (req, res) => {
             townRecord = await prisma.town.create({
                 data: {
                     town,
-                    counties: {
-                        create: {
-                            countyId: countyRecord.id,
-                        },
-                    },
+                    countyId: countyRecord.id,
                 },
             });
         }
 
-        // Upsert county-town 关系（多对多关联）
-        await prisma.countyTown.upsert({
-            where: { countyId_townId: { countyId: countyRecord.id, townId: townRecord.id } },
-            update: {},
-            create: {
-                countyId: countyRecord.id,
-                townId: townRecord.id,
-            },
-        });
-
-        // 5. Return user along with counties and towns
+        // 5. 返回用户及其关联的县和镇信息
         const userWithCountiesAndTowns = await prisma.user.findUnique({
             where: { id: user.id },
             include: {
@@ -177,7 +159,11 @@ export const add = async (req, res) => {
             },
         });
 
-        res.status(200).json({ user, county: countyRecord, town: townRecord, details: userWithCountiesAndTowns });
+        res.status(200).json({
+            user: userWithCountiesAndTowns,
+            county: countyRecord,
+            town: townRecord,
+        });
     } catch (error) {
         console.error("Error in add:", error);
         res.status(500).json({ error: "Server error" });
