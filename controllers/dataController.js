@@ -10,9 +10,20 @@ export const data = async (req, res) => {
             return res.status(400).json({ error: "User email not provided" });
         }
 
+        const user = await prisma.user.findUnique({
+            where: {
+              email: email, // 使用 email 查找對應的使用者
+            },
+            select: {
+              id: true, // 只選取 userId
+            },
+          });
+
+        const userId = user.id;
+
         // Find user and their associated counties and towns
         const data = await prisma.user.findUnique({
-            where: { id: user.id, },
+            where: { id: userId, },
             include: {
                 counties: {
                     include: {
