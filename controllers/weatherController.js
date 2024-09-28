@@ -115,13 +115,16 @@ export const add = async (req, res) => {
 
         // 4. Find or create town with composite unique constraint (town, countyId)
         let townRecord = await prisma.town.findUnique({
-            where: { town },
+            where: {
+                town_countyId: { town, countyId: countyRecord.id }
+            },
         });
 
         if (!townRecord) {
             townRecord = await prisma.town.create({
                 data: {
                     town,
+                    countyId: countyRecord.id, // 需要确保 town 记录与相应 county 关联
                 },
             });
         }

@@ -35,6 +35,8 @@ model Town {
   town     String 
   
   counties CountyTown[]
+
+  @@unique([town, id])
 }
 
 model UserCounty {
