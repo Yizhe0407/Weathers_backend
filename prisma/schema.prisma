@@ -15,43 +15,31 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  username String
-  email    String @unique
-
-  counties UserCounty[] // 多對多關聯
+  id       Int       @id @default(autoincrement())
+  username String    @unique
+  email    String    @unique
+  counties UserCounty[]  // 使用中間表來處理多對多關聯
 }
 
 model County {
-  id     Int    @id @default(autoincrement())
-  county String @unique
-
-  users UserCounty[] // 多對多關聯
-  towns CountyTown[]
+  id      Int       @id @default(autoincrement())
+  county  String
+  towns   Town[]
+  users   UserCounty[]  // 使用中間表來處理多對多關聯
 }
 
 model Town {
-  id   Int    @id @default(autoincrement())
-  town String
-
-  counties CountyTown[] // 多對多關聯
+  id       Int     @id @default(autoincrement())
+  town     String
+  county   County  @relation(fields: [countyId], references: [id])
+  countyId Int
 }
 
+// 多對多關聯的中間表
 model UserCounty {
   userId   Int
   countyId Int
-  user     User   @relation(fields: [userId], references: [id])
-  county   County @relation(fields: [countyId], references: [id])
-
-  @@id([userId, countyId])
-}
-
-model CountyTown {
-  countyId Int
-  townId   Int
-  county   County @relation(fields: [countyId], references: [id])
-  town     Town   @relation(fields: [townId], references: [id])
-
-  // 這裡定義了縣市與鎮的唯一組合
-  @@id([countyId, townId]) // 多對多主鍵
+  user     User    @relation(fields: [userId], references: [id])
+  county   County  @relation(fields: [countyId], references: [id])
+  @@id([userId, countyId]) // 設置複合主鍵來表示 user 和 county 的唯一對應
 }
