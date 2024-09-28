@@ -19,7 +19,6 @@ CREATE TABLE "County" (
 CREATE TABLE "Town" (
     "id" SERIAL NOT NULL,
     "town" TEXT NOT NULL,
-    "countyId" INTEGER NOT NULL,
 
     CONSTRAINT "Town_pkey" PRIMARY KEY ("id")
 );
@@ -32,8 +31,13 @@ CREATE TABLE "UserCounty" (
     CONSTRAINT "UserCounty_pkey" PRIMARY KEY ("userId","countyId")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+-- CreateTable
+CREATE TABLE "CountyTown" (
+    "countyId" INTEGER NOT NULL,
+    "townId" INTEGER NOT NULL,
+
+    CONSTRAINT "CountyTown_pkey" PRIMARY KEY ("countyId","townId")
+);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
@@ -41,14 +45,14 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 -- CreateIndex
 CREATE UNIQUE INDEX "County_county_key" ON "County"("county");
 
--- CreateIndex
-CREATE UNIQUE INDEX "Town_town_countyId_key" ON "Town"("town", "countyId");
-
--- AddForeignKey
-ALTER TABLE "Town" ADD CONSTRAINT "Town_countyId_fkey" FOREIGN KEY ("countyId") REFERENCES "County"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
 -- AddForeignKey
 ALTER TABLE "UserCounty" ADD CONSTRAINT "UserCounty_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserCounty" ADD CONSTRAINT "UserCounty_countyId_fkey" FOREIGN KEY ("countyId") REFERENCES "County"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CountyTown" ADD CONSTRAINT "CountyTown_countyId_fkey" FOREIGN KEY ("countyId") REFERENCES "County"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CountyTown" ADD CONSTRAINT "CountyTown_townId_fkey" FOREIGN KEY ("townId") REFERENCES "Town"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
