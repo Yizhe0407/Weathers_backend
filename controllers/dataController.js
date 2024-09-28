@@ -22,13 +22,18 @@ export const data = async (req, res) => {
             }
         });
 
+        if (!data) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         console.log("Data:", data);
 
-        // 格式化返回的结果
+        // 提取并格式化为独特的镇名集合
+        const townSet = new Set(data.towns.map(userTown => userTown.town.town));
+
+        // 转换为数组并返回镇名列表
         const formattedResult = {
-            towns: data.towns.map(userTown => ({
-                town: userTown.town.town
-            }))
+            towns: Array.from(townSet)  // Convert Set to an array of unique town names
         };
 
         console.log("Formatted result:", formattedResult);
