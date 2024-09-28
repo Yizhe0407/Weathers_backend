@@ -15,28 +15,26 @@ datasource db {
 }
 
 model User {
-  id       Int        @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   username String
-  email    String     @unique
+  email    String @unique
 
   counties UserCounty[] // 多對多關聯
 }
 
 model County {
-  id     Int          @id @default(autoincrement())
-  county String       @unique
+  id     Int    @id @default(autoincrement())
+  county String @unique
 
-  users  UserCounty[] // 多對多關聯
-  towns  CountyTown[]
+  users UserCounty[] // 多對多關聯
+  towns CountyTown[]
 }
 
 model Town {
-  id       Int     @id @default(autoincrement())
-  town     String 
-  
-  counties CountyTown[]
+  id   Int    @id @default(autoincrement())
+  town String
 
-  @@unique([town, id])
+  counties CountyTown[] // 多對多關聯
 }
 
 model UserCounty {
@@ -45,7 +43,7 @@ model UserCounty {
   user     User   @relation(fields: [userId], references: [id])
   county   County @relation(fields: [countyId], references: [id])
 
-  @@id([userId, countyId]) 
+  @@id([userId, countyId])
 }
 
 model CountyTown {
@@ -54,5 +52,6 @@ model CountyTown {
   county   County @relation(fields: [countyId], references: [id])
   town     Town   @relation(fields: [townId], references: [id])
 
+  // 這裡定義了縣市與鎮的唯一組合
   @@id([countyId, townId]) // 多對多主鍵
 }

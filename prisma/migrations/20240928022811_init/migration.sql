@@ -45,9 +45,6 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 -- CreateIndex
 CREATE UNIQUE INDEX "County_county_key" ON "County"("county");
 
--- CreateIndex
-CREATE UNIQUE INDEX "Town_town_id_key" ON "Town"("town", "id");
-
 -- AddForeignKey
 ALTER TABLE "UserCounty" ADD CONSTRAINT "UserCounty_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 

@@ -91,6 +91,10 @@ export const add = async (req, res) => {
             where: { email },
         });
 
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         // 2. 查找或创建县（county）
         let countyRecord = await prisma.county.findUnique({
             where: { county },
@@ -98,25 +102,39 @@ export const add = async (req, res) => {
 
         if (!countyRecord) {
             countyRecord = await prisma.county.create({
-                data: {
-                    county,
-                },
+                data: { county },
             });
         }
 
-        await prisma.userCounty.upsert({
-            where: { userId_countyId: { userId: user.id, countyId: countyRecord.id } },
-            update: {},
-            create: {
-                userId: user.id,
-                countyId: countyRecord.id,
-            }
+        // 3. 查找當前 user 是否已經有該 county 的關聯
+        const existingUserCounty = await prisma.userCounty.findUnique({
+            where: {
+                userId_countyId: {
+                    userId: user.id,
+                    countyId: countyRecord.id,
+                },
+            },
         });
 
-        // 4. Find or create town with composite unique constraint (town, countyId)
-        let townRecord = await prisma.town.findUnique({
+        if (!existingUserCounty) {
+            // 如果沒有關聯，則創建新的關聯
+            await prisma.userCounty.upsert({
+                where: { userId_countyId: { userId: user.id, countyId: countyRecord.id } },
+                update: {},
+                create: {
+                    userId: user.id,
+                    countyId: countyRecord.id,
+                }
+            });
+        }
+
+        // 4. 查找或创建 town 使用复合键 (town 和 countyId)
+        let townRecord = await prisma.town.findFirst({
             where: {
-                town_countyId: { town, countyId: countyRecord.id }
+                town: town,
+                counties: {
+                    some: { countyId: countyRecord.id },
+                },
             },
         });
 
@@ -124,7 +142,11 @@ export const add = async (req, res) => {
             townRecord = await prisma.town.create({
                 data: {
                     town,
-                    countyId: countyRecord.id, // 需要确保 town 记录与相应 county 关联
+                    counties: {
+                        create: {
+                            countyId: countyRecord.id,
+                        },
+                    },
                 },
             });
         }
