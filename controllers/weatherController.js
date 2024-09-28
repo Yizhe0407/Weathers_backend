@@ -96,7 +96,7 @@ export const add = async (req, res) => {
         }
 
         // 2. 查找或创建镇
-        const townRecord = await prisma.town.findFirst({
+        let townRecord = await prisma.town.findFirst({
             where: { town },
         });
 
