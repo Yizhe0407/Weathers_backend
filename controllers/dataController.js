@@ -12,7 +12,7 @@ export const data = async (req, res) => {
 
         // Find user and their associated counties and towns
         const data = await prisma.user.findUnique({
-            where: { email },
+            where: { id: userId, },
             include: {
                 counties: {
                     include: {
@@ -29,8 +29,6 @@ export const data = async (req, res) => {
         if (!data) {
             return res.status(404).json({ error: "User not found" });
         }
-
-        console.log(data);
 
         // Return user's counties and associated towns
         res.status(200).json(data.counties.map((userCounty) => ({
