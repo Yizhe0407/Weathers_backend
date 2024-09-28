@@ -115,22 +115,26 @@ export const add = async (req, res) => {
 
         // 4. Find or create town with composite unique constraint (town, countyId)
         let townRecord = await prisma.town.findUnique({
-            where: {
-                town_countyId: {
-                    town,
-                    countyId: countyRecord.id,
-                },
-            },
+            where: { town },
         });
 
         if (!townRecord) {
             townRecord = await prisma.town.create({
                 data: {
                     town,
-                    county: { connect: { id: countyRecord.id } },
                 },
             });
         }
+
+        // Upsert county-town 关系（多对多关联）
+        await prisma.countyTown.upsert({
+            where: { countyId_townId: { countyId: countyRecord.id, townId: townRecord.id } },
+            update: {},
+            create: {
+                countyId: countyRecord.id,
+                townId: townRecord.id,
+            },
+        });
 
         // 5. Return user along with counties and towns
         const userWithCountiesAndTowns = await prisma.user.findUnique({
@@ -140,7 +144,7 @@ export const add = async (req, res) => {
                     include: {
                         county: {
                             include: {
-                                towns: true,
+                                towns: true, // 包含 county 下所有的 towns
                             },
                         },
                     },
