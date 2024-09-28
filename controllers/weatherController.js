@@ -75,6 +75,65 @@ export const createUser = async (req, res) => {
     }
 };
 
+export const deleteTown = async (req, res) => {
+    try {
+        const { email, town } = req.body;
+
+        // 檢查請求中是否提供了 email 和 town
+        if (!email || !town) {
+            return res.status(400).json({ error: "Email and town are required" });
+        }
+
+        // 查找用戶是否存在
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // 查找 town 是否存在
+        const townRecord = await prisma.town.findFirst({
+            where: { town },
+        });
+
+        if (!townRecord) {
+            return res.status(404).json({ error: "Town not found" });
+        }
+
+        // 查找 User 和 Town 的關聯
+        const userTown = await prisma.userTown.findUnique({
+            where: {
+                userId_townId: {
+                    userId: user.id,
+                    townId: townRecord.id,
+                },
+            },
+        });
+
+        if (!userTown) {
+            return res.status(404).json({ error: "User is not associated with this town" });
+        }
+
+        // 刪除 User 和 Town 的關聯
+        await prisma.userTown.delete({
+            where: {
+                userId_townId: {
+                    userId: user.id,
+                    townId: townRecord.id,
+                },
+            },
+        });
+
+        res.status(200).json("Town association deleted successfully");
+    } catch (error) {
+        console.error("Error in deleteTown:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
 
 export const add = async (req, res) => {
     try {
