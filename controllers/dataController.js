@@ -12,7 +12,7 @@ export const data = async (req, res) => {
 
         const user = await prisma.user.findUnique({
             where: { email },
-            select: { username: true },
+            select: { id: true, username: true },
         });
 
         console.log("User:", user);
@@ -20,7 +20,7 @@ export const data = async (req, res) => {
         // Find user and their associated counties and towns
         const data = await prisma.userCounty.findMany({
             where: {
-                username: user,
+                userId: user.id,
             },
             include: {
                 counties: {
