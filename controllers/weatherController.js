@@ -84,23 +84,11 @@ export const deleteTown = async (req, res) => {
             return res.status(400).json({ error: "Email and town are required" });
         }
 
-        // 查找用戶是否存在
-        const user = await prisma.user.findUnique({
-            where: { email },
-        });
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return res.status(404).json({ error: "User not found" });
 
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // 查找 town 是否存在
-        const townRecord = await prisma.town.findFirst({
-            where: { town },
-        });
-
-        if (!townRecord) {
-            return res.status(404).json({ error: "Town not found" });
-        }
+        const townRecord = await prisma.town.findFirst({ where: { town } });
+        if (!townRecord) return res.status(404).json({ error: "Town not found" });
 
         // 查找 User 和 Town 的關聯
         const userTown = await prisma.userTown.findUnique({
@@ -116,15 +104,12 @@ export const deleteTown = async (req, res) => {
             return res.status(404).json({ error: "User is not associated with this town" });
         }
 
-        // 刪除 User 和 Town 的關聯
-        await prisma.userTown.delete({
-            where: {
-                userId_townId: {
-                    userId: user.id,
-                    townId: townRecord.id,
-                },
-            },
-        });
+        // 使用事务处理删除操作
+        await prisma.$transaction([
+            prisma.userTown.delete({
+                where: { userId_townId: { userId: user.id, townId: townRecord.id } },
+            }),
+        ]);
 
         res.status(200).json("Town association deleted successfully");
     } catch (error) {
