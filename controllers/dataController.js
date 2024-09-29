@@ -1,5 +1,7 @@
+import Redis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 
+const redis = new Redis();
 const prisma = new PrismaClient();
 
 export const data = async (req, res) => {
@@ -8,6 +10,11 @@ export const data = async (req, res) => {
 
         if (!email) {
             return res.status(400).json({ error: "User email not provided" });
+        }
+        // 检查缓存中是否已有结果
+        const cachedResult = await redis.get(`user:${email}:towns`);
+        if (cachedResult) {
+            return res.status(200).json(JSON.parse(cachedResult));
         }
 
         // 查找 user 相关的县和镇
@@ -33,6 +40,9 @@ export const data = async (req, res) => {
         const formattedResult = {
             towns: Array.from(townSet)  // 将集合转换为数组
         };
+
+        // 将结果存储到 Redis 中，设置过期时间（例如：1 小时）
+        await redis.set(`user:${email}:towns`, JSON.stringify(formattedResult), 'EX', 3600);
 
         // 返回格式化的结果
         res.status(200).json(formattedResult);

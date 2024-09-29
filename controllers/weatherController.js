@@ -1,5 +1,7 @@
+import Redis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 
+const redis = new Redis();
 const prisma = new PrismaClient();
 
 const API_KEY = process.env.WEATHER_API_KEY;
@@ -38,8 +40,6 @@ export const weather = async (req, res) => {
             startTime: item.startTime,
             value: item.elementValue[0].value,
         }));
-
-        console.log("Filtered Weather Data:", filteredData);
 
         res.status(200).json({ weatherData: filteredData });
     } catch (err) {
@@ -111,6 +111,9 @@ export const deleteTown = async (req, res) => {
             }),
         ]);
 
+        // 清除相关的 Redis 缓存
+        await redis.del(`user:${email}:towns`);
+
         res.status(200).json("Town association deleted successfully");
     } catch (error) {
         console.error("Error in deleteTown:", error);
@@ -128,46 +131,26 @@ export const add = async (req, res) => {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        console.log("Received data:", { username, email, town });
-
         // 1. 查找用户
         const user = await prisma.user.findUnique({
             where: { email },
         });
 
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // 2. 查找或创建镇
-        let townRecord = await prisma.town.findFirst({
-            where: { town },
-        });
-
-        if (!townRecord) {
-            townRecord = await prisma.town.create({
-                data: { town },
-            });
-        }
-
-        // 3. 创建 User 和 Town 的关联
-        const userTown = await prisma.userTown.findUnique({
+        // 2. 查找或创建镇并同时创建关联
+        await prisma.userTown.upsert({
             where: {
                 userId_townId: {
                     userId: user.id,
-                    townId: townRecord.id,
+                    townId: (await prisma.town.upsert({
+                        where: { town },
+                        update: {},  // 如果镇已存在，不做更新
+                        create: { town },  // 如果镇不存在，创建新镇
+                    })).id,  // 返回新创建或找到的镇的 id
                 },
             },
+            update: {},  // 如果关联已存在，不做更新
+            create: { userId: user.id, townId: (await prisma.town.findUnique({ where: { town } })).id },  // 创建新关联
         });
-
-        if (!userTown) {
-            await prisma.userTown.create({
-                data: {
-                    userId: user.id,
-                    townId: townRecord.id,
-                },
-            });
-        }
 
         res.status(200).json("Add successful");
     } catch (error) {
