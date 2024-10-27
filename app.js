@@ -6,7 +6,7 @@ import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
 app.use(cors({
-    origin: 'https://skynet-mu.vercel.app', // 設置允許的來源
+    origin: '*', // 設置允許的來源
     methods: ['GET', 'POST'], // 設置允許的方法
     credentials: true, // 如果需要使用 cookie 驗證
 }));
