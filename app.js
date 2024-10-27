@@ -5,18 +5,10 @@ import dataRoute from './routes/dataRoutes.js';
 import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
-
-const allowedOrigins = ['http://localhost:3001', 'https://skynet-mu.vercel.app'];
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: ['GET', 'POST'],
-    credentials: true,
+    origin: 'https://skynet-mu.vercel.app', // 設置允許的來源
+    methods: ['GET', 'POST'], // 設置允許的方法
+    credentials: true, // 如果需要使用 cookie 驗證
 }));
 app.use(express.json());
 
