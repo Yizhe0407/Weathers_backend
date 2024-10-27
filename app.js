@@ -6,9 +6,10 @@ import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
 app.use(cors({
-    origin: "*", 
-    methods: ['GET', 'POST', 'DELETE', 'PUT'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    "origin": "*",
+    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+    "preflightContinue": false,
+    "optionsSuccessStatus": 204
 }));
 
 app.options('*', cors());
@@ -21,7 +22,7 @@ const LoadDB = async () => {
 };
 LoadDB();
 
-app.use('/api', weatherRoute );
+app.use('/api', weatherRoute);
 app.use('/api', dataRoute);
 
 app.listen(3000, function () {
