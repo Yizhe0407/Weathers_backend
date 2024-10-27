@@ -6,10 +6,12 @@ import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
 app.use(cors({
-    origin: "*", // 加上你的 Vercel 項目域名
+    origin: "*", 
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+app.options('*', cors());
 
 app.use(express.json());
 
