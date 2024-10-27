@@ -6,10 +6,11 @@ import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
 app.use(cors({
-    origin: '*', // 設置允許的來源
-    methods: ['GET', 'POST'], // 設置允許的方法
-    credentials: true, // 如果需要使用 cookie 驗證
+    origin: ['http://localhost:3001', 'https://weathers-backend.vercel.app'], // 加上你的 Vercel 項目域名
+    methods: ['GET', 'POST', 'DELETE', 'PUT'],
+    credentials: true,
 }));
+
 app.use(express.json());
 
 // 連接到資料庫
