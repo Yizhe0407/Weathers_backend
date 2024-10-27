@@ -1,14 +1,20 @@
 import cors from 'cors';
 import express from 'express';
-import weatherRoute from './routes/weatherRoutes.js';
+import { ConnectDB } from './config/db.js';
 import dataRoute from './routes/dataRoutes.js';
+import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-app.use('/api', weatherRoute);
+// 連接到資料庫
+const LoadDB = async () => {
+    await ConnectDB();
+};
+LoadDB();
+
+app.use('/api', weatherRoute );
 app.use('/api', dataRoute);
 
 app.listen(3000, function () {

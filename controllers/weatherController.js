@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import User from '../models/User.js';
+import Town from '../models/Town.js';
 
 const API_KEY = process.env.WEATHER_API_KEY;
 
@@ -22,6 +21,7 @@ export const weather = async (req, res) => {
         );
 
         if (!response.ok) {
+            console.log("API Key:", API_KEY);
             return res.status(response.status).json({ error: "Unable to get weather data" });
         }
 
@@ -48,124 +48,77 @@ export const weather = async (req, res) => {
     }
 };
 
-export const createUser = async (req, res) => {
-    try {
-        const { email, username } = req.body;  // 从 req.body 中解构出 email 和 username
-
-        if (!email || !username) {  // 检查 email 和 username 是否都存在
-            return res.status(400).json({ error: "Email and username are required" });
-        }
-
-        // 查找用户是否存在
-        let user = await prisma.user.findUnique({
-            where: { email },  // email 应该是字符串
-        });
-
-        // 如果用户不存在则创建
-        if (!user) {
-            user = await prisma.user.create({
-                data: { username, email }  // 创建时需要提供 username 和 email
-            });
-        }
-
-        res.status(200).json(user);
-    } catch (error) {
-        console.error("Error in createUser:", error);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-export const deleteTown = async (req, res) => {
-    try {
-        const { email, town } = req.body;
-
-        // 檢查請求中是否提供了 email 和 town
-        if (!email || !town) {
-            return res.status(400).json({ error: "Email and town are required" });
-        }
-
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return res.status(404).json({ error: "User not found" });
-
-        const townRecord = await prisma.town.findFirst({ where: { town } });
-        if (!townRecord) return res.status(404).json({ error: "Town not found" });
-
-        // 查找 User 和 Town 的關聯
-        const userTown = await prisma.userTown.findUnique({
-            where: {
-                userId_townId: {
-                    userId: user.id,
-                    townId: townRecord.id,
-                },
-            },
-        });
-
-        if (!userTown) {
-            return res.status(404).json({ error: "User is not associated with this town" });
-        }
-
-        // 使用事务处理删除操作
-        await prisma.$transaction([
-            prisma.userTown.delete({
-                where: { userId_townId: { userId: user.id, townId: townRecord.id } },
-            }),
-        ]);
-
-        res.status(200).json("Town association deleted successfully");
-    } catch (error) {
-        console.error("Error in deleteTown:", error);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
 export const add = async (req, res) => {
+    const { username, email, towns } = req.body; // 從請求中獲取用戶資料與城鎮
+
     try {
-        const { username, email, town } = req.body;
+        // 確保 towns 是一個數組
+        const townsArray = Array.isArray(towns) ? towns : [towns];
 
-        if (!username || !email || !town) {
-            return res.status(400).json({ error: "All fields are required" });
-        }
+        // 確保每個 town 都存在或創建
+        const townIds = await Promise.all(townsArray.map(async (townName) => {
+            let town = await Town.findOne({ town: townName });
+            if (!town) {
+                town = await Town.create({ town: townName });
+            }
+            return town._id;
+        }));
 
-        console.log("Received data:", { username, email, town });
-
-        // 1. 查找用户
-        const user = await prisma.user.findUnique({
-            where: { email },
-        });
-
-        // 2. 查找或创建镇
-        let townRecord = await prisma.town.findFirst({
-            where: { town },
-        });
-
-        if (!townRecord) {
-            townRecord = await prisma.town.create({
-                data: { town },
+        // 檢查是否存在用戶
+        let user = await User.findOne({ username });
+        if (!user) {
+            // 創建新的 User 並關聯 Town
+            user = await User.create({
+                username,
+                email,
+                towns: townIds, // 關聯 Town 的 ObjectId
             });
+            return res.status(201).json({ message: "User created", user });
+        } else {
+            // 用戶存在：更新 Town 列表
+            const existingTownIds = new Set(user.towns.map(id => id.toString()));
+            const newTownIds = townIds.filter(id => !existingTownIds.has(id.toString()));
+
+            if (newTownIds.length > 0) {
+                user.towns.push(...newTownIds);
+                await user.save();
+            }
+
+            return res.status(200).json({ message: "User updated with new towns", user });
         }
-
-        // 3. 创建 User 和 Town 的关联
-        const userTown = await prisma.userTown.findUnique({
-            where: {
-                userId_townId: {
-                    userId: user.id,
-                    townId: townRecord.id,
-                },
-            },
-        });
-
-        if (!userTown) {
-            await prisma.userTown.create({
-                data: {
-                    userId: user.id,
-                    townId: townRecord.id,
-                },
-            });
-        }
-
-        res.status(200).json("Add successful");
     } catch (error) {
-        console.error("Error in add:", error);
-        res.status(500).json({ error: "Server error" });
+        console.log("Error:", error.message);
+        res.status(500).json({ message: "Error creating or updating user" });
     }
-};
+}
+
+export const del = async (req, res) => {
+    const { email, town } = req.body;
+
+    try {
+        // 查找指定的 user，不使用 populate
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // 查找指定的 town 的 ObjectId
+        const townToRemove = await Town.findOne({ town });
+        if (!townToRemove) {
+            return res.status(404).json({ message: "Town not found" });
+        }
+
+        // 确保对 ObjectId 的直接引用进行过滤
+        const townIdToRemove = townToRemove._id;
+        user.towns = user.towns.filter(
+            (userTownId) => !userTownId.equals(townIdToRemove)
+        );
+
+        // 保存用戶的更新信息
+        await user.save();
+        res.status(200).json({ message: "Town removed from user", user });
+    } catch (error) {
+        console.error("Error:", error.message);
+        res.status(500).json({ message: "Error removing town from user" });
+    }
+}
