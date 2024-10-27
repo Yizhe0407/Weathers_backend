@@ -6,7 +6,7 @@ import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
 app.use(cors({
-    origin: ['http://localhost:3001', 'https://weathers-backend.vercel.app'], // 加上你的 Vercel 項目域名
+    origin: "*", // 加上你的 Vercel 項目域名
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
