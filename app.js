@@ -5,7 +5,19 @@ import dataRoute from './routes/dataRoutes.js';
 import weatherRoute from './routes/weatherRoutes.js';
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = ['http://localhost:3001', 'https://skynet-mu.vercel.app'];
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
+}));
 app.use(express.json());
 
 // 連接到資料庫
