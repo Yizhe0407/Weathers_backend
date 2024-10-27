@@ -8,7 +8,7 @@ const app = express();
 app.use(cors({
     origin: ['http://localhost:3001', 'https://weathers-backend.vercel.app'], // 加上你的 Vercel 項目域名
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
-    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
